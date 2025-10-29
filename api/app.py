@@ -61,7 +61,7 @@ async def shutdown_event():
 
 @app.get("/")
 async def index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse("Home.html", {"request": request})
 
 @app.get("/health")
 async def health_check():
