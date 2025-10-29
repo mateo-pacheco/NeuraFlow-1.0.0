@@ -1,0 +1,75 @@
+# ============================================================================
+# CORE - Detección y Visión
+# ============================================================================
+
+# YOLOv8 y Ultralytics
+ultralytics>=8.0.0
+
+# OpenCV para procesamiento de video
+opencv-python>=4.8.0
+opencv-contrib-python>=4.8.0
+
+# Computación numérica
+numpy>=1.24.0
+
+# Deep Learning
+torch>=2.0.0
+torchvision>=0.15.0
+
+# ============================================================================
+# BASE DE DATOS
+# ============================================================================
+
+# MySQL Connector
+mysql-connector-python>=8.0.33
+
+# ============================================================================
+# API WEB
+# ============================================================================
+
+# FastAPI framework
+fastapi>=0.104.0
+
+# Servidor ASGI
+uvicorn[standard]>=0.24.0
+
+# Websockets
+websockets>=12.0
+
+# Validación de datos
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# Multipart forms
+python-multipart>=0.0.6
+
+# ============================================================================
+# UTILIDADES
+# ============================================================================
+
+# Variables de entorno
+python-dotenv>=1.0.0
+
+# Templates HTML
+jinja2>=3.1.2
+
+# ============================================================================
+# OPCIONALES (comentar si no se necesitan)
+# ============================================================================
+
+# Logging avanzado
+# loguru>=0.7.0
+
+# CLI con colores
+# rich>=13.0.0
+# typer>=0.9.0
+
+# Testing
+# pytest>=7.4.0
+# pytest-asyncio>=0.21.0
+# httpx>=0.25.0
+
+# Code quality
+# black>=23.0.0
+# flake8>=6.0.0
+# mypy>=1.5.0
