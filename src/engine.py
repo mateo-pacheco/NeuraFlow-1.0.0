@@ -229,7 +229,7 @@ class DetectionEngine:
     def get_statistics(self) -> dict:
         Stats = {
             'total_entries': self.total_entries,
-            'fps': self.fps_calculator.get_fps(),
+            'fps': self.fps_calculator.fps,
             'tracked_people': self.tracker.count_active_tracks(),
             'frame_count': self.frame_count,
             'db_conected': self.db_manager is not None,
@@ -238,7 +238,7 @@ class DetectionEngine:
         if self.db_manager:
             db_stats = self.db_manager.get_statistics()
             Stats['db_total_entries'] = db_stats.total_entries
-            Stats['db_avg_confidence'] = db_stats.avg_confidence
-            Stats['daily_entries'] = db_stats.daily_entries
+            Stats['db_avg_confidence'] = db_stats.prom_confidence
+            Stats['daily_entries'] = db_stats.daily_entry
         
         return Stats
