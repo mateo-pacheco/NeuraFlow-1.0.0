@@ -13,7 +13,11 @@ class PersonDetector:
         self.device = self._detect_device()
         self.model = None
         self.imgsz = 640
-        
+        print(torch.__version__)          # Debe mostrar >= 2.0.0
+        print(torch.version.cuda)         # Debe mostrar 13.0
+        print(torch.cuda.is_available())  # Debe ser True
+        print(torch.cuda.get_device_name(0))  # Debe mostrar "NVIDIA GeForce RTX 2070"
+            
         self._load_model()
 
     def _detect_device(self) -> str:
