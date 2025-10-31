@@ -163,7 +163,7 @@ async def get_total_entries():
 async def get_peak_hours():
     try:
         db = DatabaseManager()
-        results = db.get_peak_hours()
+        results = db.get_algorithm_results("peak_hour")
         db.close()
 
         for row in results:
@@ -182,10 +182,10 @@ async def get_peak_hours():
 
 
 @app.get("/api/weather_predictions")
-async def get_weather_predictions(limit: int = 1):
+async def get_weather_predictions():
     try:
         db = DatabaseManager()
-        results = db.get_weather_predictions(limit)
+        results = db.get_algorithm_results("Weather prediction")
         db.close()
 
         for row in results:
@@ -204,10 +204,10 @@ async def get_weather_predictions(limit: int = 1):
 
 
 @app.get("/api/predictions")
-async def get_predictions(limit: int = 1):
+async def get_predictions():
     try:
         db = DatabaseManager()
-        results = db.get_predictions(limit)
+        results = db.get_algorithm_results("Prediction")
         db.close()
 
         for row in results:

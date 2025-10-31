@@ -282,8 +282,9 @@ class DatabaseManager:
             cursor.close()
             connection.close()
 
+
     # Consulta para los algoritmos de predicción
-    def get_algorithm_results(self, name: str, limit: int = 2) -> List[Dict[str, Any]]:
+    def get_algorithm_results(self, name: str) -> List[Dict[str, Any]]:
         connection = self._get_connection()
         try:
             cursor = connection.cursor(dictionary=True)
@@ -292,9 +293,9 @@ class DatabaseManager:
                 SELECT * FROM resultados
                 WHERE algoritmo = %s
                 ORDER BY timestamp DESC
-                LIMIT %s
             """
-            cursor.execute(query, (name, limit))
+            cursor.execute(query, (name,))
+
             results = cursor.fetchall()
 
             for row in results:
@@ -309,14 +310,17 @@ class DatabaseManager:
             cursor.close()
             connection.close()
 
-    def get_peak_hours(self, limit: int = 1) -> List[Dict[str, Any]]:
-        return self.get_algorithm_results("peak_hours", limit)
 
-    def get_weather_predictions(self, limit: int = 1) -> List[Dict[str, Any]]:
-        return self.get_algorithm_results("Weather prediction", limit)
+    def get_peak_hours(self) -> List[Dict[str, Any]]:
+        return self.get_algorithm_results("peak_hours")
 
-    def get_future_predictions(self, limit: int = 1) -> List[Dict[str, Any]]:
-        return self.get_algorithm_results("Prediction", limit)
+
+    def get_weather_predictions(self) -> List[Dict[str, Any]]:
+        return self.get_algorithm_results("Weather prediction")
+
+
+    def get_future_predictions(self) -> List[Dict[str, Any]]:
+        return self.get_algorithm_results("Prediction")
 
     # Cierra el pool de conexiones a la db
     def close(self):

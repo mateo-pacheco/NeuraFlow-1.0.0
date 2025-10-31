@@ -10,7 +10,7 @@ class Settings:
     
     # Proyecto
     PROJECT_NAME = "NeuraFlow"
-    VERSION = "1.0.0"
+    VERSION = "1.0.1"  # Versión actualizada
     
     # Base de datos
     DB_HOST = os.getenv("DB_HOST", "localhost")
@@ -28,17 +28,22 @@ class Settings:
     # Detección YOLO
     MODEL_PATH = os.getenv("MODEL_PATH", "yolov8n.pt")
     MODEL_VERSION = "YOLOv8n"
-    CONFIDENCE_THRESHOLD = 0.7
-    MIN_CONFIDENCE = 0.7
+    
+    # ACTUALIZADO: Umbrales de confianza más altos
+    CONFIDENCE_THRESHOLD = float(os.getenv("CONFIDENCE_THRESHOLD", "0.3"))
+    MIN_CONFIDENCE = float(os.getenv("MIN_CONFIDENCE", "0.4"))
+    
+    # Validación de bbox
     MIN_HEIGHT = 70
     MIN_AREA_RATIO = 0.0015
     MAX_AREA_RATIO = 0.35
     MIN_ASPECT_RATIO = 1.3
     MAX_ASPECT_RATIO = 4.0
 
-    # Tracking
-    TRACKING_TIMEOUT = float(os.getenv("TRACKING_TIMEOUT", "5.0"))
-    DISTANCE_TRACKING = int(os.getenv("DISTANCE_TRACKING", "80"))
+    # ACTUALIZADO: Tracking mejorado
+    TRACKING_TIMEOUT = float(os.getenv("TRACKING_TIMEOUT", "1.5"))
+    DISTANCE_TRACKING = int(os.getenv("DISTANCE_TRACKING", "150"))
+    MAX_FRAMES_LOST = int(os.getenv("MAX_FRAMES_LOST", "10"))
     
     # Aproximación
     DIRECTION_THRESHOLD = int(os.getenv("DIRECTION_THRESHOLD", "30"))
@@ -49,11 +54,14 @@ class Settings:
     API_HOST = os.getenv("API_HOST", "0.0.0.0")
     API_PORT = int(os.getenv("API_PORT", "8000"))
     
+    # NUEVO: Optimización de performance
+    PROCESS_EVERY_N_FRAMES = int(os.getenv("PROCESS_EVERY_N_FRAMES", "2"))
+    
     # Performance
     BATCH_DB_INSERTS = os.getenv("BATCH_DB_INSERTS", "true").lower() == "true"
     BATCH_SIZE = int(os.getenv("BATCH_SIZE", "10"))
-    JPEG_QUALITY = int(os.getenv("JPEG_QUALITY", "90"))
-    FPS_UPDATE_INTERVAL = int(os.getenv("FPS_UPDATE_INTERVAL", "60"))
+    JPEG_QUALITY = int(os.getenv("JPEG_QUALITY", "85"))
+    FPS_UPDATE_INTERVAL = int(os.getenv("FPS_UPDATE_INTERVAL", "30"))
     
     # Paths
     BASE_DIR = Path(__file__).parent.parent
@@ -75,6 +83,8 @@ class Settings:
         assert cls.MIN_CONFIDENCE >= cls.CONFIDENCE_THRESHOLD, "MIN_CONFIDENCE debe ser >= CONFIDENCE_THRESHOLD"
         assert cls.MIN_AREA_RATIO < cls.MAX_AREA_RATIO, "MIN_AREA_RATIO debe ser < MAX_AREA_RATIO"
         assert cls.BATCH_SIZE > 0, "BATCH_SIZE debe ser > 0"
+        assert cls.PROCESS_EVERY_N_FRAMES >= 1, "PROCESS_EVERY_N_FRAMES debe ser >= 1"
+        assert cls.MAX_FRAMES_LOST > 0, "MAX_FRAMES_LOST debe ser > 0"
 
 
 # Validar al importar

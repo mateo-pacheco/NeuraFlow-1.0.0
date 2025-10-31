@@ -12,39 +12,54 @@ class PersonDetector:
         self.model_path = model_path or settings.MODEL_PATH
         self.device = self._detect_device()
         self.model = None
-
+        self.imgsz = 640
+        
         self._load_model()
 
     def _detect_device(self) -> str:
         if torch.cuda.is_available():
-            print("Usando GPU")
+            print("✓ Usando GPU (CUDA)")
             return "cuda"
         else:
-            print("Usando CPU")
+            print("⚠ Usando CPU (más lento)")
             return "cpu"
     
     def _load_model(self):
         try:
             self.model = YOLO(self.model_path)
             self.model.to(self.device)
-            print("Modelo cargado correctamente en: ", self.device)
+            
+            if self.device == "cuda":
+                self.model.model.half()
+                print(f"✓ Modelo cargado en GPU con half-precision")
+            else:
+                print(f"✓ Modelo cargado en CPU")
+                
+            print(f"   Tamaño de imagen: {self.imgsz}px")
+            
         except Exception as e:
             raise DetectionError(f"Error al cargar el modelo: {e}")
     
     def detect(self, frame: np.ndarray) -> List[Tuple]:
         if self.model is None:
             raise DetectionError("Modelo no cargado")
+        
         try:
             results = self.model(
                 frame,
-                conf = settings.CONFIDENCE_THRESHOLD,
-                classes = [0],
-                verbose = False,
+                conf=settings.CONFIDENCE_THRESHOLD,
+                classes=[0],
+                verbose=False,
+                imgsz=self.imgsz,
+                half=True if self.device == "cuda" else False,
+                device=self.device,
+                max_det=20,
             )
 
             return self._filter_detections(results, frame.shape)
+            
         except Exception as e:
-            print(f"Error al detectar personas: {e}")
+            print(f"⚠ Error al detectar personas: {e}")
             return []
 
     def _filter_detections(self, results, frame_shape) -> List[Tuple]:
@@ -70,14 +85,15 @@ class PersonDetector:
     def _is_valid_detection(self, bbox: Tuple, conf: float, frame_shape: Tuple) -> bool:
         if conf < settings.MIN_CONFIDENCE:
             return False
+        
         return validate_bbox(
-            bbox = bbox,
-            frame_shape = frame_shape,
-            min_height = settings.MIN_HEIGHT,
-            min_area_ratio = settings.MIN_AREA_RATIO,
-            max_area_ratio = settings.MAX_AREA_RATIO,
-            min_aspect_ratio = settings.MIN_ASPECT_RATIO,
-            max_aspect_ratio = settings.MAX_ASPECT_RATIO,
+            bbox=bbox,
+            frame_shape=frame_shape,
+            min_height=settings.MIN_HEIGHT,
+            min_area_ratio=settings.MIN_AREA_RATIO,
+            max_area_ratio=settings.MAX_AREA_RATIO,
+            min_aspect_ratio=settings.MIN_ASPECT_RATIO,
+            max_aspect_ratio=settings.MAX_ASPECT_RATIO,
         )
 
     def get_bbox_info(self, bbox: Tuple) -> dict:
@@ -86,7 +102,7 @@ class PersonDetector:
         width = x2 - x1
         height = y2 - y1
         area = width * height
-        center_x =(x1 + x2) // 2
+        center_x = (x1 + x2) // 2
         center_y = (y1 + y2) // 2
         bottom_y = y2
         aspect_ratio = height / width if width > 0 else 0
@@ -100,6 +116,11 @@ class PersonDetector:
             "bottom_y": bottom_y,
             "aspect_ratio": aspect_ratio,
         }
-
-
+    
+    def set_imgsz(self, size: int):
+        if size % 32 != 0:
+            size = ((size // 32) + 1) * 32
+            print(f"⚠ Tamaño ajustado a {size} (debe ser múltiplo de 32)")
         
+        self.imgsz = size
+        print(f"✓ Tamaño de imagen actualizado: {self.imgsz}px")
