@@ -19,7 +19,9 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:4200" "http://localhost:3000" "http://127.0.0.1:4200"
+        "http://localhost:4200",
+        "http://localhost:3000",
+        "http://127.0.0.1:4200",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -106,7 +108,7 @@ def generate_frames():
         )
 
 
-@app.get("/video_feed")
+@app.get("/api/video_feed")
 async def video_feed():
     return StreamingResponse(
         generate_frames(), media_type="multipart/x-mixed-replace; boundary=frame"

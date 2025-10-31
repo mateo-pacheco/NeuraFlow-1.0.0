@@ -27,8 +27,9 @@ class Settings:
     
     # Detección YOLO
     MODEL_PATH = os.getenv("MODEL_PATH", "yolov8n.pt")
-    CONFIDENCE_THRESHOLD = 0.8
-    MIN_CONFIDENCE = 0.8
+    MODEL_VERSION = "YOLOv8n"
+    CONFIDENCE_THRESHOLD = 0.7
+    MIN_CONFIDENCE = 0.7
     MIN_HEIGHT = 70
     MIN_AREA_RATIO = 0.0015
     MAX_AREA_RATIO = 0.35
@@ -52,7 +53,7 @@ class Settings:
     BATCH_DB_INSERTS = os.getenv("BATCH_DB_INSERTS", "true").lower() == "true"
     BATCH_SIZE = int(os.getenv("BATCH_SIZE", "10"))
     JPEG_QUALITY = int(os.getenv("JPEG_QUALITY", "90"))
-    FPS_UPDATE_INTERVAL = int(os.getenv("FPS_UPDATE_INTERVAL", "30"))
+    FPS_UPDATE_INTERVAL = int(os.getenv("FPS_UPDATE_INTERVAL", "60"))
     
     # Paths
     BASE_DIR = Path(__file__).parent.parent
