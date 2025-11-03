@@ -6,6 +6,7 @@ import numpy as np
 from config.settings import settings
 from src.utils import validate_bbox, DetectionError
 
+
 class PersonDetector:
 
     def __init__(self, model_path: str = None):
@@ -13,11 +14,11 @@ class PersonDetector:
         self.device = self._detect_device()
         self.model = None
         self.imgsz = 640
-        print(torch.__version__)          # Debe mostrar >= 2.0.0
-        print(torch.version.cuda)         # Debe mostrar 13.0
+        print(torch.__version__)  # Debe mostrar >= 2.0.0
+        print(torch.version.cuda)  # Debe mostrar 13.0
         print(torch.cuda.is_available())  # Debe ser True
         print(torch.cuda.get_device_name(0))  # Debe mostrar "NVIDIA GeForce RTX 2070"
-            
+
         self._load_model()
 
     def _detect_device(self) -> str:
@@ -27,27 +28,21 @@ class PersonDetector:
         else:
             print("⚠ Usando CPU (más lento)")
             return "cpu"
-    
+
+
     def _load_model(self):
         try:
             self.model = YOLO(self.model_path)
             self.model.to(self.device)
-            
-            if self.device == "cuda":
-                self.model.model.half()
-                print(f"✓ Modelo cargado en GPU con half-precision")
-            else:
-                print(f"✓ Modelo cargado en CPU")
-                
+            print(f"✓ Modelo cargado en {self.device.upper()} (float32)")
             print(f"   Tamaño de imagen: {self.imgsz}px")
-            
         except Exception as e:
             raise DetectionError(f"Error al cargar el modelo: {e}")
-    
+
     def detect(self, frame: np.ndarray) -> List[Tuple]:
         if self.model is None:
             raise DetectionError("Modelo no cargado")
-        
+
         try:
             results = self.model(
                 frame,
@@ -61,17 +56,17 @@ class PersonDetector:
             )
 
             return self._filter_detections(results, frame.shape)
-            
+
         except Exception as e:
             print(f"⚠ Error al detectar personas: {e}")
             return []
 
     def _filter_detections(self, results, frame_shape) -> List[Tuple]:
         valid_detections = []
-        
+
         if len(results) == 0 or results[0].boxes is None:
             return valid_detections
-        
+
         boxes = results[0].boxes
 
         for i in range(len(boxes)):
@@ -83,13 +78,13 @@ class PersonDetector:
 
             if self._is_valid_detection(bbox, conf, frame_shape):
                 valid_detections.append((x1, y1, x2, y2, conf))
-        
+
         return valid_detections
 
     def _is_valid_detection(self, bbox: Tuple, conf: float, frame_shape: Tuple) -> bool:
         if conf < settings.MIN_CONFIDENCE:
             return False
-        
+
         return validate_bbox(
             bbox=bbox,
             frame_shape=frame_shape,
@@ -110,7 +105,7 @@ class PersonDetector:
         center_y = (y1 + y2) // 2
         bottom_y = y2
         aspect_ratio = height / width if width > 0 else 0
-        
+
         return {
             "width": width,
             "height": height,
@@ -120,11 +115,11 @@ class PersonDetector:
             "bottom_y": bottom_y,
             "aspect_ratio": aspect_ratio,
         }
-    
+
     def set_imgsz(self, size: int):
         if size % 32 != 0:
             size = ((size // 32) + 1) * 32
             print(f"⚠ Tamaño ajustado a {size} (debe ser múltiplo de 32)")
-        
+
         self.imgsz = size
         print(f"✓ Tamaño de imagen actualizado: {self.imgsz}px")

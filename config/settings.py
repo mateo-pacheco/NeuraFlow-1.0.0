@@ -10,7 +10,7 @@ class Settings:
     
     # Proyecto
     PROJECT_NAME = "NeuraFlow"
-    VERSION = "1.0.1"  # Versión actualizada
+    VERSION = "1.0.0"  # Versión actualizada
     
     # Base de datos
     DB_HOST = os.getenv("DB_HOST", "localhost")

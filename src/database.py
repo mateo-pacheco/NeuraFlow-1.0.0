@@ -282,7 +282,6 @@ class DatabaseManager:
             cursor.close()
             connection.close()
 
-
     # Consulta para los algoritmos de predicción
     def get_algorithm_results(self, name: str) -> List[Dict[str, Any]]:
         connection = self._get_connection()
@@ -290,9 +289,11 @@ class DatabaseManager:
             cursor = connection.cursor(dictionary=True)
 
             query = """
-                SELECT * FROM resultados
+                SELECT *
+                FROM resultados
                 WHERE algoritmo = %s
                 ORDER BY timestamp DESC
+                LIMIT 2;
             """
             cursor.execute(query, (name,))
 
@@ -310,14 +311,11 @@ class DatabaseManager:
             cursor.close()
             connection.close()
 
-
     def get_peak_hours(self) -> List[Dict[str, Any]]:
         return self.get_algorithm_results("peak_hours")
 
-
     def get_weather_predictions(self) -> List[Dict[str, Any]]:
         return self.get_algorithm_results("Weather prediction")
-
 
     def get_future_predictions(self) -> List[Dict[str, Any]]:
         return self.get_algorithm_results("Prediction")

@@ -93,7 +93,6 @@ class DetectionEngine:
                 if frame_callback:
                     frame_callback(frame)
                 
-                show_window = True
                 if show_window:
                     cv2.imshow("NeuraFlow", frame)
 
@@ -217,40 +216,6 @@ class DetectionEngine:
             return (255, 255, 0)
     
     def _add_ui_overlay(self, frame: np.ndarray, fps: float) -> np.ndarray:
-        cv2.putText(
-            frame,
-            f"Entradas: {self.total_entries}",
-            (10, 30),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.8,
-            (0, 0, 0),
-            3,
-            lineType=cv2.LINE_AA
-        )
-        cv2.putText(
-            frame,
-            f"Entradas: {self.total_entries}",
-            (10, 30),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.8,
-            (0, 255, 0),
-            2,
-            lineType=cv2.LINE_AA
-        )
-
-        active = self.tracker.count_active_tracks()
-        info_text = f"FPS: {fps:.1f} | Tracking: {active} | Skip: 1/{self.process_every_n_frames}"
-        cv2.putText(
-            frame,
-            info_text,
-            (10, frame.shape[0] - 10),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.5,
-            (255, 255, 255),
-            1,
-            lineType=cv2.LINE_AA
-        )
-
         return frame
     
     def reset_counter(self):
