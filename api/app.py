@@ -6,6 +6,8 @@ import uvicorn
 import json
 from datetime import datetime
 
+import os
+from ai_recommendations import RecommendationManager
 from config.settings import settings
 from src.stream import StreamHandler
 from src.database import DatabaseManager
@@ -237,7 +239,7 @@ async def websocket_stats(websocket: WebSocket):
             stats_json = json.dumps(stats, default=serialize_for_json)
             await websocket.send_text(stats_json)
 
-            await asyncio.sleep(2)
+            await asyncio.sleep(1)
 
     except WebSocketDisconnect:
         print("Cliente desconectado")
@@ -245,6 +247,115 @@ async def websocket_stats(websocket: WebSocket):
         print(f"Error en el WebSocket: {str(e)}")
 
 
-if __name__ == "__main__":
 
+recommendation_manager = None
+if os.getenv("AI_RECOMMENDATIONS_ENABLED", "false").lower() == "true":
+    try:
+        recommendation_manager = RecommendationManager()
+        print("Sistema de recomendaciones IA activado")
+    except Exception as e:
+        print(f"Recomendaciones IA desactivadas: {e}")
+
+
+@app.post("/api/recommendations/generate")
+async def generate_ai_recommendation():
+    if recommendation_manager is None:
+        return JSONResponse(
+            content={
+                "error": "Recomendaciones IA no habilitadas",
+                "hint": "Configura GROQ_API_KEY en tu archivo .env",
+            },
+            status_code=503,
+        )
+    try:
+        db = DatabaseManager()
+
+        peak_hours = db.get_algorithm_results("peak_hour")
+        weather = db.get_algorithm_results("Weather prediction")
+        predictions = db.get_algorithm_results("Prediction")
+        total = db.get_total_entries()
+
+        db.close()
+
+        datos_prediccion = {
+            "hora_pico": peak_hours[0] if peak_hours else None,
+            "prediccion_clima": weather[0] if weather else None,
+            "prediccion_futuro": predictions[0] if predictions else None,
+            "total_entradas": total,
+        }
+
+        resultado = recommendation_manager.generate(datos_prediccion)
+
+        if resultado["status"] == "success":
+            try:
+                db = DatabaseManager()
+                connection = db._get_connection()
+                cursor = connection.cursor()
+
+                query = """
+                    INSERT INTO recomendaciones (algoritmo, timestamp, resultado)
+                    VALUES ('AI_Recommendation', %s, %s)
+                """
+
+                cursor.execute(
+                    query, (datetime.now(), json.dumps(resultado, ensure_ascii=False, indent=2))
+                )
+
+                cursor.close()
+                connection.close()
+                db.close()
+
+                print("Recomendación guardada en BD")
+            except Exception as e:
+                print(f"No se pudo guardar en BD: {e}")
+
+        return resultado
+
+    except Exception as e:
+        return JSONResponse(
+            content={"error": str(e), "status": "error"}, status_code=500
+        )
+
+
+@app.get("/api/recommendations/latest")
+async def get_latest_ai_recommendation():
+
+    try:
+        db = DatabaseManager()
+        connection = db._get_connection()
+        cursor = connection.cursor(dictionary=True)
+
+        query = """
+            SELECT * FROM recomendaciones 
+            WHERE algoritmo = 'AI_Recommendation'
+            ORDER BY timestamp DESC 
+            LIMIT 1
+        """
+        cursor.execute(query)
+        result = cursor.fetchone()
+
+        cursor.close()
+        connection.close()
+        db.close()
+
+        if result:
+            if result["timestamp"]:
+                result["timestamp"] = result["timestamp"].isoformat()
+
+            if result["resultado"]:
+                result["resultado"] = json.loads(result["resultado"])
+
+            print(f'Recomendacion ${result}')
+            return result
+        else:
+            return {
+                "message": "No hay recomendaciones previas",
+                "hint": "Usa POST /api/recommendations/generate para crear una",
+            }
+
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+
+
+if __name__ == "__main__":
     uvicorn.run(app, host=settings.API_HOST, port=settings.API_PORT, reload=False)

@@ -99,6 +99,19 @@ class DatabaseManager:
             """
             cursor.execute(query2)
 
+            # Tabla de recomendaciones
+            query3 = """
+                    CREATE TABLE IF NOT EXISTS recomendaciones (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        algoritmo VARCHAR(100) NOT NULL,
+                        timestamp DATETIME NOT NULL,
+                        resultado JSON NOT NULL,
+                        INDEX idx_algoritmo (algoritmo),
+                        INDEX idx_timestamp (timestamp)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """
+            cursor.execute(query3)
+
             print("Tablas verificadas/creadas correctamente")
         except Exception as e:
             raise DatabaseError(f"Error al crear las tablas: {e}")
@@ -324,8 +337,6 @@ class DatabaseManager:
     def close(self):
         self.force_flush()
         print("Pool de conexiones cerrado correctamente")
-
-    # Creación de la base de datos
 
 
 def create_database():
