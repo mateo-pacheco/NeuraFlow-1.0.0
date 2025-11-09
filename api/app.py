@@ -160,6 +160,39 @@ async def get_total_entries():
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
+@app.get("/api/entries/daily")
+async def get_daily_entries():
+    try:
+        db = DatabaseManager()
+        conn = db._get_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        query = """
+            SELECT 
+                DATE(timestamp) AS fecha,
+                COUNT(*) AS total
+            FROM entradas
+            GROUP BY DATE(timestamp)
+            ORDER BY fecha ASC
+        """
+
+        cursor.execute(query)
+        results = cursor.fetchall()
+
+        cursor.close()
+        conn.close()
+        db.close()
+
+        # Asegurar formato compatible JSON
+        for row in results:
+            if isinstance(row["fecha"], datetime):
+                row["fecha"] = row["fecha"].date().isoformat()
+
+        return results
+
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+
 
 @app.get("/api/peak_hours")
 async def get_peak_hours():
@@ -247,7 +280,6 @@ async def websocket_stats(websocket: WebSocket):
         print(f"Error en el WebSocket: {str(e)}")
 
 
-
 recommendation_manager = None
 if os.getenv("AI_RECOMMENDATIONS_ENABLED", "false").lower() == "true":
     try:
@@ -270,9 +302,9 @@ async def generate_ai_recommendation():
     try:
         db = DatabaseManager()
 
-        peak_hours = db.get_algorithm_results("peak_hour")
-        weather = db.get_algorithm_results("Weather prediction")
-        predictions = db.get_algorithm_results("Prediction")
+        peak_hours = db.get_algorithm_results_prediccion("peak_hour")
+        weather = db.get_algorithm_results_prediccion("Weather prediction")
+        predictions = db.get_algorithm_results_prediccion("Prediction")
         total = db.get_total_entries()
 
         db.close()
@@ -298,7 +330,11 @@ async def generate_ai_recommendation():
                 """
 
                 cursor.execute(
-                    query, (datetime.now(), json.dumps(resultado, ensure_ascii=False, indent=2))
+                    query,
+                    (
+                        datetime.now(),
+                        json.dumps(resultado, ensure_ascii=False, indent=2),
+                    ),
                 )
 
                 cursor.close()
@@ -345,12 +381,107 @@ async def get_latest_ai_recommendation():
             if result["resultado"]:
                 result["resultado"] = json.loads(result["resultado"])
 
-            print(f'Recomendacion ${result}')
+            print(f"Recomendacion ${result}")
             return result
         else:
             return {
                 "message": "No hay recomendaciones previas",
                 "hint": "Usa POST /api/recommendations/generate para crear una",
+            }
+
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+
+
+@app.post("/api/recommendations/weather")
+async def generate_weather_recommendation():
+    if recommendation_manager is None:
+        return JSONResponse(
+            content={
+                "error": "Recomendaciones IA no habilitadas",
+                "hint": "Configura GROQ_API_KEY en tu archivo .env",
+            },
+            status_code=503,
+        )
+
+    try:
+        db = DatabaseManager()
+        weather = db.get_algorithm_results_prediccion("Weather prediction")
+        db.close()
+
+        if not weather:
+            return JSONResponse(
+                content={"error": "No hay datos de predicción climática disponibles."},
+                status_code=404,
+            )
+
+        resultado = recommendation_manager.generate_weather_recommendation(weather[0])
+
+        if resultado["status"] == "success":
+            try:
+                db = DatabaseManager()
+                conn = db._get_connection()
+                cursor = conn.cursor()
+                query = """
+                    INSERT INTO recomendaciones (algoritmo, timestamp, resultado)
+                    VALUES ('AI_Weather_Recommendation', %s, %s)
+                """
+                cursor.execute(
+                    query,
+                    (
+                        datetime.now(),
+                        json.dumps(resultado, ensure_ascii=False, indent=2),
+                    ),
+                )
+                conn.commit()
+                cursor.close()
+                conn.close()
+                db.close()
+                print("Recomendación climática guardada en BD")
+            except Exception as e:
+                print(f"No se pudo guardar en BD: {e}")
+
+        return resultado
+
+    except Exception as e:
+        return JSONResponse(
+            content={"error": str(e), "status": "error"}, status_code=500
+        )
+
+
+@app.get("/api/recommendations/latest/weather")
+async def get_latest_weather_recommendation():
+    try:
+        db = DatabaseManager()
+        connection = db._get_connection()
+        cursor = connection.cursor(dictionary=True)
+
+        query = """
+            SELECT * FROM recomendaciones 
+            WHERE algoritmo = 'AI_Weather_Recommendation'
+            ORDER BY timestamp DESC 
+            LIMIT 1
+        """
+        cursor.execute(query)
+        result = cursor.fetchone()
+
+        cursor.close()
+        connection.close()
+        db.close()
+
+        if result:
+            if result["timestamp"]:
+                result["timestamp"] = result["timestamp"].isoformat()
+
+            if result["resultado"]:
+                result["resultado"] = json.loads(result["resultado"])
+
+            print(f"Última recomendación climática obtenida: {result}")
+            return result
+        else:
+            return {
+                "message": "No hay recomendaciones climáticas previas",
+                "hint": "Usa POST /api/recommendations/weather para generar una",
             }
 
     except Exception as e:

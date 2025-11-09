@@ -324,6 +324,33 @@ class DatabaseManager:
             cursor.close()
             connection.close()
 
+    def get_algorithm_results_prediccion(self, name: str) -> List[Dict[str, Any]]:
+        connection = self._get_connection()
+        try:
+            cursor = connection.cursor(dictionary=True)
+
+            query = """
+                SELECT *
+                FROM resultados
+                WHERE algoritmo = %s
+                ORDER BY timestamp DESC;
+            """
+            cursor.execute(query, (name,))
+
+            results = cursor.fetchall()
+
+            for row in results:
+                if row["timestamp"]:
+                    row["timestamp"] = row["timestamp"].isoformat()
+
+            return results
+        except Exception as e:
+            print(f"Error al obtener los resultados del algoritmo: {e}")
+            return []
+        finally:
+            cursor.close()
+            connection.close()
+
     def get_peak_hours(self) -> List[Dict[str, Any]]:
         return self.get_algorithm_results("peak_hours")
 

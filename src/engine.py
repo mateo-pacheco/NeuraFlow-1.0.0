@@ -78,7 +78,7 @@ class DetectionEngine:
                 ret, frame = self.camera.read()
                 if not ret:
                     print("Error: No se pudo leer el frame")
-                    time.sleep(0.1)
+                    time.sleep(5)
                     continue
 
                 should_detect = (self.frame_count % self.process_every_n_frames) == 0
